@@ -12,7 +12,7 @@ Requirements:
 Clone and build the project
 
 ```bash
-    git clone https://github.com/ishtyaq/retail-store.git
+    git clone https://github.com/ishtyaq/retailstore.git
     cd retail-store
     mvn install
 ```    
