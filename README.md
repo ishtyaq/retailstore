@@ -13,7 +13,7 @@ Clone and build the project
 
 ```bash
     git clone https://github.com/ishtyaq/retailstore.git
-    cd retail-store
+    cd retailstore
     mvn install
 ```    
 
