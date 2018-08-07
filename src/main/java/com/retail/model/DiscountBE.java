@@ -5,7 +5,15 @@ import com.retail.commontypes.DiscountType;
 import com.retail.commontypes.UserType;
 
 import java.math.BigDecimal;
+import java.util.Set;
 
+/**
+ * Discount entity file that holds key information relevant for mapping state and for calculating discount.
+ *
+ *
+ *
+ *
+ */
 public class DiscountBE {
 
 
@@ -16,14 +24,6 @@ public class DiscountBE {
     // the due amount before discounts are applied
     private BigDecimal amount;
 
-    // the bill's net after the discounts are applied
-    private BigDecimal netPayable;
-
-    public void setNetPayable(BigDecimal netPayable) {
-        this.netPayable = netPayable;
-    }
-
-
 
     private CategoryType category;
 
@@ -31,18 +31,20 @@ public class DiscountBE {
 
     private UserType userType;
 
-
-
     private Integer months;
+
+
+    private Set<CategoryType> exclude;
 
     /**
      * Create a new order for a user with amount & category
-     * @param discountType that the bill belongs to
+     * @param discountType : PERCENTAGE,AMOUNT
      * @param amount the net total of the bill
-     * @param userType the userType of the bill
-     * @param months default month for customer type
+     * @param userType :EMPLOYEE,AFFILIATE,CUSTOMER, ALL: denote common rules applicable to all 3 types.
+     *
+     * @param months default month for customer type: 24 minimum to be eligible for discount for "CUSTOMER" user type
      */
-    public DiscountBE(DiscountType discountType, BigDecimal amount, UserType userType, Integer months) {
+    public DiscountBE(DiscountType discountType, BigDecimal amount, UserType userType, Integer months, Set<CategoryType> exclude) {
         super();
 
         if(amount == null) {
@@ -57,12 +59,10 @@ public class DiscountBE {
         this.amount = amount;
         this.userType = userType;
         this.months = months;
-
+        this.exclude = exclude;
     }
 
-    public BigDecimal getNetPayable() {
-        return netPayable;
-    }
+
 
     public CategoryType getCategory() {
         return category;
@@ -109,5 +109,13 @@ public class DiscountBE {
 
     public void setAmount(BigDecimal amount) {
         this.amount = amount;
+    }
+
+    public Set<CategoryType> getExclude() {
+        return exclude;
+    }
+
+    public void setExclude(Set<CategoryType> exclude) {
+        this.exclude = exclude;
     }
 }

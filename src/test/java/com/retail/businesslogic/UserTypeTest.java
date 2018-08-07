@@ -4,6 +4,7 @@ import com.retail.commontypes.CategoryType;
 import com.retail.commontypes.DiscountType;
 import com.retail.commontypes.UserType;
 import com.retail.model.DiscountBE;
+import com.retail.model.ItemBE;
 import com.retail.model.UserBE;
 import org.apache.commons.lang3.time.DateUtils;
 import org.junit.Before;
@@ -23,7 +24,7 @@ public class UserTypeTest {
     private DiscountBL discountBL;
 
     private UserBE user;
-
+    private ItemBE item;
     private DiscountBE discount;
 
     @Before
@@ -35,31 +36,33 @@ public class UserTypeTest {
 
         Set<CategoryType> exclude = new HashSet<>();
         exclude.add(CategoryType.GROCERIES);
+        item = new ItemBE(user, new BigDecimal(450),CategoryType.GROCERIES);
 
-        discountBL = new DiscountBL(user, user.getUserType(), exclude, new BigDecimal(450),new BigDecimal(30),24);
+        discountBL = new DiscountBL(user, new BigDecimal(450),new BigDecimal(30),24);
 
         discount =
-                new DiscountBE(DiscountType.PERCENTAGE, new BigDecimal(30),  UserType.EMPLOYEE,null);
+                new DiscountBE(DiscountType.PERCENTAGE, new BigDecimal(30),  UserType.EMPLOYEE,null,exclude);
         //discount.setUser(user);
         discount.setCategory(CategoryType.GROCERIES);
-        discount.setNetPayable(new BigDecimal(450));
+
     }
 
     @Test
     public void testUserTypeDiscountValid() {
-        // check
+        // check, UserType.AFFILIATE,
+        user.setUserType(UserType.AFFILIATE);
         DiscountBL discount =
-                new DiscountBL(user,UserType.AFFILIATE, null,new BigDecimal(100),new BigDecimal(10),24);
+                new DiscountBL(user,new BigDecimal(100),new BigDecimal(10),24);
         discount.setType(DiscountType.AMOUNT);
-        assertEquals(UserType.AFFILIATE, discount.getUserType());
+        assertEquals(UserType.AFFILIATE, discount.getUser().getUserType());
         assertEquals(DiscountType.AMOUNT, discount.getType());
     }
 
     @Test
     public void testUserTypeDiscountDefaultType() {
-        //check
+        //check UserType.CUSTOMER,
         DiscountBL discount =
-                new DiscountBL(user,UserType.CUSTOMER, null,new BigDecimal(100),new BigDecimal(10),24 );
+                new DiscountBL(user,new BigDecimal(100),new BigDecimal(10),24 );
 
      //   assertEquals(UserType.CUSTOMER, discount.getUserType());
         assertEquals(DiscountType.PERCENTAGE, discount.getType());
@@ -68,37 +71,39 @@ public class UserTypeTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testUserTypeDiscountInvalidDiscount() {
-        new DiscountBL(user, UserType.AFFILIATE, null, null,null,24);
+        //UserType.AFFILIATE,
+        new DiscountBL(user, null,null,24);
     }
 
 
     @Test(expected = IllegalArgumentException.class)
     public void testUserTypeDiscountInvalidUserType() {
-        new DiscountBL(user,null,null, new BigDecimal(100),new BigDecimal(10),24 );
+        new DiscountBL(user,new BigDecimal(100),null,24 );
     }
 
     @Test
     public void testIsApplicableInvalidDiscountable() {
         try {
-            discountBL.isApplicable(null);
+            discountBL.isApplicable(null,null);
             fail("expected exception not thrown");
         } catch(IllegalArgumentException e) {
             e.printStackTrace();
         }
 
-        discount.setUser(null);
+
+        item.setUser(null);
         try {
-            discountBL.isApplicable(discount);
+            discountBL.isApplicable(discount,item);
             fail("expected exception not thrown");
         } catch(IllegalArgumentException e) {
             e.printStackTrace();
         }
 
         user.setUserType(null);
-        discount.setUser(user);
 
+        item.setUser(user);
         try {
-            discountBL.isApplicable(discount);
+            discountBL.isApplicable(discount,item);
             fail("expected exception not thrown");
         } catch(IllegalArgumentException e) {
             e.printStackTrace();
@@ -108,35 +113,39 @@ public class UserTypeTest {
     @Test(expected = IllegalArgumentException.class)
     public void testIsApplicableInvalidDiscount() {
         discount.setUserType(null);
-        discountBL.isApplicable(discount);
+        discountBL.isApplicable(discount,item);
     }
 
     @Test
     public void testIsApplicable() {
 
-        discount.setUser(user);
-        discount.setCategory(CategoryType.GROCERIES);
-        assertFalse(discountBL.isApplicable(discount));
 
-        discount.setCategory(CategoryType.ELECTRONICS);
-        assertTrue(discountBL.isApplicable(discount));
+        item.setUser(user);
+        item.setCategory(CategoryType.GROCERIES);
+        assertFalse(discountBL.isApplicable(discount,item));
 
-        discount.setCategory(null);
-        assertTrue(discountBL.isApplicable(discount));
 
-        discount.setCategory(CategoryType.CLOTHING);
+        item.setCategory(CategoryType.ELECTRONICS);
+        assertTrue(discountBL.isApplicable(discount,item));
+
+
+        item.setCategory(null);
+        assertTrue(discountBL.isApplicable(discount,item));
+
+
+        item.setCategory(CategoryType.CLOTHING);
     //    discount.setExclude(null);
-        assertTrue(discountBL.isApplicable(discount));
+        assertTrue(discountBL.isApplicable(discount,item));
 
         discount.setUserType(UserType.AFFILIATE);
-        assertFalse(discountBL.isApplicable(discount));
+        assertFalse(discountBL.isApplicable(discount,item));
 
     }
 
     @Test
     public void testCalculateInvalid() {
         try {
-            discountBL.calculate(null);
+            discountBL.calculate(null,null);
             fail("expected exception not thrown");
         } catch(IllegalArgumentException e) {
             e.printStackTrace();
@@ -145,17 +154,18 @@ public class UserTypeTest {
 
         // netPayable is null
         try {
-            discountBL.calculate(discount);
+            item.setUser(null);
+            discountBL.calculate(discount,item);
             fail("expected exception not thrown");
         } catch(IllegalArgumentException e) {
             e.printStackTrace();
         }
 
     //    discount.setDiscount(null);
-        discount.setNetPayable(new BigDecimal(120));
 
+        item.setNet(new BigDecimal(120));
         try {
-            discountBL.calculate(discount);
+            discountBL.calculate(discount,item);
             fail("expected exception not thrown");
         } catch(IllegalArgumentException e) {
             e.printStackTrace();
@@ -164,32 +174,37 @@ public class UserTypeTest {
 
     @Test
     public void testCalculateNotApplicable() {
-        discount.setNetPayable(new BigDecimal(220));
+
         // category excluded
-        discount.setUser(user);
-        assertNull(discountBL.calculate(discount));
+
+        item.setUser(user);
+        item.setNet(new BigDecimal(220));
+        assertNull(discountBL.calculate(discount,item));
 
         // non matching userType
         discount.setUserType(UserType.AFFILIATE);
-        assertNull(discountBL.calculate(discount));
+
+        assertNull(discountBL.calculate(discount,item));
     }
 
     @Test
     public void testCalculateApplicable() {
      //   discount.setNetPayable(bill.getNet());
-        discount.setUser(user);
-        discount.setCategory(CategoryType.ELECTRONICS);
 
+        item.setUser(user);
+        item.setCategory(CategoryType.ELECTRONICS);
         // 30% off $450
-        BigDecimal amount = discountBL.calculate(discount);
+        item.setNet(new BigDecimal(450));
+        BigDecimal amount = discountBL.calculate(discount,item);
         assertNotNull(amount);
 
         assertEquals(new BigDecimal(135).setScale(2), amount);
 
         // 10% off $125.50
-        discount.setNetPayable(new BigDecimal(125.50));
+
+        item.setNet(new BigDecimal(125.50));
         discountBL.setDiscount(new BigDecimal(10));
-        amount = discountBL.calculate(discount);
+        amount = discountBL.calculate(discount,item);
         assertNotNull(amount);
 
         assertEquals(new BigDecimal(12.55).setScale(2, RoundingMode.HALF_UP), amount);
@@ -197,7 +212,7 @@ public class UserTypeTest {
 
         // discount with amount simply returns the amount
         discountBL.setType(DiscountType.AMOUNT);
-        amount = discountBL.calculate(discount);
+        amount = discountBL.calculate(discount,item);
     //    amount = discount.discountBL(discount);
 
         assertEquals(new BigDecimal(10).setScale(2), amount);
@@ -207,10 +222,12 @@ public class UserTypeTest {
     @Test(expected = IllegalArgumentException.class)
     public void testCalculateInvalidDiscountType() {
     //    discount.setNetPayable(discount.getNet());
-        discount.setCategory(CategoryType.ELECTRONICS);
-     //   discount.setType(null);
 
-        discountBL.calculate(discount);
+        item.setCategory(CategoryType.ELECTRONICS);
+     //   discount.setType(null);
+        item.setUser(null);
+        item.setNet(new BigDecimal(450));
+        discountBL.calculate(discount,item);
     }
 }
 

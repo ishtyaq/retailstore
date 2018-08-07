@@ -4,6 +4,7 @@ import com.retail.commontypes.CategoryType;
 import com.retail.commontypes.DiscountType;
 import com.retail.commontypes.UserType;
 import com.retail.model.DiscountBE;
+import com.retail.model.ItemBE;
 import com.retail.model.UserBE;
 import org.apache.commons.lang3.time.DateUtils;
 import org.junit.Before;
@@ -23,7 +24,7 @@ public class NetDiscountTest {
     private DiscountBL discountBL;
 
     private UserBE user;
-
+    private ItemBE item;
     private DiscountBE discount;
 
     @Before
@@ -33,24 +34,25 @@ public class NetDiscountTest {
         Date date = DateUtils.addYears(new Date(), -3);
 
         user = new UserBE(date, UserType.EMPLOYEE);
+        item = new ItemBE(user, BigDecimal.ZERO,CategoryType.GROCERIES);
 
         Set<CategoryType> exclude = new HashSet<>();
         exclude.add(CategoryType.GROCERIES);
      //   bill = new Bill(user, new BigDecimal(450), CategoryType.GROCERIES);
-        discountBL = new DiscountBL(user, user.getUserType(),exclude,new BigDecimal(100),new BigDecimal(5),24);
+        discountBL = new DiscountBL(user, new BigDecimal(100),new BigDecimal(5),24);
 
 
 
         discount =
-                new DiscountBE(DiscountType.AMOUNT,new BigDecimal(5), UserType.ALL, null);
+                new DiscountBE(DiscountType.AMOUNT,new BigDecimal(5), UserType.ALL, null, exclude);
         discount.setCategory(CategoryType.GROCERIES);
-        discount.setNetPayable(new BigDecimal(450));
+
     }
 
     @Test
     public void testNetMultiplesDiscountValid() {
         DiscountBE discount =
-                new DiscountBE(DiscountType.AMOUNT,new BigDecimal(5), null, null);
+                new DiscountBE(DiscountType.AMOUNT,new BigDecimal(5), null, null, null);
 
     //    assertEquals(new BigDecimal(100), discount.getNetMultiples());
         assertEquals(DiscountType.AMOUNT, discount.getDiscountType());
@@ -59,19 +61,19 @@ public class NetDiscountTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testNetMultiplesDiscountInvalidDiscount() {
-        new DiscountBL(user, null, null, new BigDecimal(100),new BigDecimal(5), 24);
+        new DiscountBL(user, new BigDecimal(100),null, 24);
     }
 
 
     @Test(expected = IllegalArgumentException.class)
     public void testNetMultiplesDiscountNullNetMultiples() {
-        new DiscountBL(user,null, null, null,new BigDecimal(5),24);
+        new DiscountBL(user, null,new BigDecimal(5),24);
     //    new NetMultiplesDiscount(new BigDecimal(5), null, null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testNetMultiplesDiscountZeroNetMultiples() {
-        new DiscountBL(user,null, null, BigDecimal.ZERO, null,24);
+        new DiscountBL(user, BigDecimal.ZERO, null,24);
         //    new NetMultiplesDiscount(new BigDecimal(5), null, BigDecimal.ZERO);
     }
 
@@ -79,16 +81,16 @@ public class NetDiscountTest {
     @Test
     public void testIsApplicableInvalidDiscountable() {
         try {
-            discountBL.isApplicable(null);
+            discountBL.isApplicable(null,null);
             fail("expected exception not thrown");
         } catch(IllegalArgumentException e) {
             e.printStackTrace();
         }
 
-        discount.setNetPayable(null);
+
 
         try {
-            discountBL.isApplicable(discount);
+            discountBL.isApplicable(discount,null);
             fail("expected exception not thrown");
         } catch(IllegalArgumentException e) {
             e.printStackTrace();
@@ -98,30 +100,37 @@ public class NetDiscountTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testIsApplicableInvalidDiscount() {
-        discount.setNetPayable(new BigDecimal(99));
+
+
+        item.setNet(new BigDecimal(99));
+        item.setUser(null);
     //    discount.setNetMultiples(null);
-        discountBL.isApplicable(discount);
+        discountBL.isApplicable(discount,item);
     }
 
     @Test
     public void testIsApplicable() {
-        discount.setUser(user);
-        discount.setCategory(CategoryType.CLOTHING);
-        discount.setNetPayable(new BigDecimal(99));
-        assertFalse(discountBL.isApplicable(discount));
 
-        discount.setNetPayable(new BigDecimal(100));
-        assertTrue(discountBL.isApplicable(discount));
+        item.setUser(user);
+        item.setCategory(CategoryType.CLOTHING);
+        item.setNet(new BigDecimal(99));
+        assertFalse(discountBL.isApplicable(discount,item));
 
-        discount.setNetPayable(new BigDecimal(210));
+
+        item.setNet(new BigDecimal(100));
+        assertTrue(discountBL.isApplicable(discount,item));
+
+
+        item.setNet(new BigDecimal(200));
     //    discount.setNetMultiples(new BigDecimal(200));
-        assertTrue(discountBL.isApplicable(discount));
+        assertTrue(discountBL.isApplicable(discount,item));
 
-        discount.setCategory(null);
-        assertTrue(discountBL.isApplicable(discount));
+
+        item.setCategory(null);
+        assertTrue(discountBL.isApplicable(discount,item));
 
      //   discount.setExclude(null);
-        assertTrue(discountBL.isApplicable(discount));
+        assertTrue(discountBL.isApplicable(discount,item));
 
     }
 
@@ -130,7 +139,7 @@ public class NetDiscountTest {
     @Test
     public void testCalculateInvalid() {
         try {
-            discountBL.calculate(null);
+            discountBL.calculate(null,null);
             fail("expected exception not thrown");
         } catch(IllegalArgumentException e) {
             e.printStackTrace();
@@ -139,17 +148,18 @@ public class NetDiscountTest {
 
         // netPayable is null
         try {
-            discountBL.calculate(discount);
+            item.setUser(null);
+            discountBL.calculate(discount,item);
             fail("expected exception not thrown");
         } catch(IllegalArgumentException e) {
             e.printStackTrace();
         }
 
         discountBL.setDiscount(null);
-        discount.setNetPayable(new BigDecimal(120));
 
+        item.setNet(new BigDecimal(120));
         try {
-            discountBL.calculate(discount);
+            discountBL.calculate(discount,item);
             fail("expected exception not thrown");
         } catch(IllegalArgumentException e) {
             e.printStackTrace();
@@ -158,33 +168,36 @@ public class NetDiscountTest {
 
     @Test
     public void testCalculateNotApplicable() {
-        discount.setNetPayable(new BigDecimal(220));
-        discount.setUser(user);
+
+        item.setNet(new BigDecimal(220));
+        item.setUser(user);
         // category excluded
-        assertNull(discountBL.calculate(discount));
+        assertNull(discountBL.calculate(discount,item));
 
         // setting the customer period to 3 years
     //   discount.setNetMultiples(new BigDecimal(300));
-        assertNull(discountBL.calculate(discount));
+        assertNull(discountBL.calculate(discount,item));
     }
 
     @Test
     public void testCalculateApplicable() {
         //bill.setNetPayable(bill.getNet());
-        discount.setUser(user);
-        discount.setCategory(CategoryType.ELECTRONICS);
 
+        item.setUser(user);
+        item.setCategory(CategoryType.ELECTRONICS);
         // $5 off for every $100 from a net of $450
-        BigDecimal amount = discountBL.calculate(discount);
+        item.setNet(new BigDecimal(450));
+        BigDecimal amount = discountBL.calculate(discount,item);
         assertNotNull(amount);
 
         assertEquals(new BigDecimal(20.00).setScale(2), amount);
 
         // $10 off for every $200 from a net of $990
-        discount.setNetPayable(new BigDecimal(990));
+
+        item.setNet(new BigDecimal(990));
         discountBL.setNetMultiples(new BigDecimal(200));
         discountBL.setDiscount(new BigDecimal(10));
-        amount = discountBL.calculate(discount);
+        amount = discountBL.calculate(discount,item);
         assertNotNull(amount);
 
         assertEquals(new BigDecimal(40.00).setScale(2, RoundingMode.HALF_UP), amount);

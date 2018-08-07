@@ -18,7 +18,7 @@ import java.util.*;
 public class DiscountData implements iDiscountData {
 
     // discounts that are always applied
-    private List<DiscountBE> alwaysApplicable = new ArrayList<>();
+    private List<DiscountBE> alwaysApplicable;
 
     // discounts that only one is applied
     private List<DiscountBE> mutuallyExclusive = new ArrayList<>();
@@ -42,33 +42,33 @@ public class DiscountData implements iDiscountData {
         // discounts that are always applicable
         alwaysApplicable = new ArrayList<>();
         //For every $100 on the bill, there would be a $5 discount
-        DiscountBE discount = new DiscountBE(DiscountType.AMOUNT, new BigDecimal(5), UserType.ALL,24);
+        DiscountBE discount = new DiscountBE(DiscountType.AMOUNT, new BigDecimal(5), UserType.ALL,24,null);
         discount.setCategory(null);
         alwaysApplicable.add(discount);
 
         // mutually exclusive discounts
         // A user can get only one of the percentage based discounts on a bill
         // The percentage based discounts do not apply on groceries.
+
         Set<CategoryType> exclude = new HashSet<>();
         exclude.add(CategoryType.GROCERIES);
-
 
         // The discounts below are applied in the order they are inserted
         // If the user is an employee of the store, he gets a 30% discount
         discount = new DiscountBE(DiscountType.PERCENTAGE,
-                new BigDecimal(30), UserType.EMPLOYEE,24);
+                new BigDecimal(30), UserType.EMPLOYEE,24,exclude);
         discount.setCategory(CategoryType.GROCERIES);
         mutuallyExclusive.add(discount);
 
         // If the user is an affiliate of the store, he gets a 10% discount
         discount = new DiscountBE(DiscountType.PERCENTAGE,
-                new BigDecimal(10), UserType.AFFILIATE,24);
+                new BigDecimal(10), UserType.AFFILIATE,24,exclude);
         discount.setCategory(CategoryType.GROCERIES);
         mutuallyExclusive.add(discount);
 
         // If the user has been a customer for over 2 years (24 months), he gets a 5% discount
         discount = new DiscountBE(DiscountType.PERCENTAGE,
-                new BigDecimal(5),UserType.CUSTOMER,24);
+                new BigDecimal(5),UserType.CUSTOMER,24,exclude);
         discount.setCategory(CategoryType.GROCERIES);
         mutuallyExclusive.add(discount);
 

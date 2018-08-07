@@ -4,6 +4,7 @@ import com.retail.commontypes.CategoryType;
 import com.retail.commontypes.UserType;
 import com.retail.dataaccess.DiscountData;
 import com.retail.model.DiscountBE;
+import com.retail.model.ItemBE;
 import com.retail.model.UserBE;
 import org.junit.Before;
 import org.junit.Test;
@@ -21,7 +22,7 @@ public class DiscountServiceTest {
     private DiscountData discountData;
 
     private UserBE user;
-
+    private ItemBE item;
     @Before
     public void setUp() throws Exception {
 
@@ -32,6 +33,7 @@ public class DiscountServiceTest {
 
 
         user = new UserBE(date, UserType.EMPLOYEE);
+        item = new ItemBE(user, new BigDecimal(450),CategoryType.GROCERIES);
 
         service = new DiscountService(user, new BigDecimal(450), CategoryType.GROCERIES);
 
@@ -53,8 +55,9 @@ public class DiscountServiceTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testApplyDiscountsInvalidNet() {
-        service.setNet(null);
-        service.applyDiscounts();
+
+        item.setNet(null);
+        service.applyDiscounts(item);
     }
 
     /**
@@ -68,17 +71,17 @@ public class DiscountServiceTest {
 
         // bill total is 99.99
         BigDecimal net = new BigDecimal(99.99);
-        service.setNet(net);
 
+        item.setNet(new BigDecimal(99.99));
         // no discounts should be applied
-        BigDecimal netPayable = service.applyDiscounts();
+        BigDecimal netPayable = service.applyDiscounts(item);
 
         assertEquals(net, netPayable);
 
         service.setAlwaysApplicable(new ArrayList<DiscountBE>());
         service.setMutuallyExclusive(new ArrayList<DiscountBE>());
 
-        netPayable = service.applyDiscounts();
+        netPayable = service.applyDiscounts(item);
 
         assertEquals(net, netPayable);
 
@@ -96,11 +99,12 @@ public class DiscountServiceTest {
 
         // bill total is 99.99
         BigDecimal net = new BigDecimal(99.99);
-        service.setCategory(CategoryType.CLOTHING);
-        service.setNet(net);
 
+        item.setCategory(CategoryType.CLOTHING);
+        item.setNet(net);
+        item.setUser(user);
         // no discounts should be applied
-        BigDecimal netPayable = service.applyDiscounts();
+        BigDecimal netPayable = service.applyDiscounts(item);
 
         assertEquals(net, netPayable);
 
@@ -114,11 +118,12 @@ public class DiscountServiceTest {
     @Test
     public void testApplyDiscountsEmployee() {
         user.setUserType(UserType.EMPLOYEE);
-        service.setUser(user);
-        service.setCategory(CategoryType.CLOTHING);
-        service.setNet(new BigDecimal(1450.00));
 
-        BigDecimal netPayable = service.applyDiscounts();
+
+        item.setUser(user);
+        item.setCategory(CategoryType.CLOTHING);
+        item.setNet(new BigDecimal(1450.00));
+        BigDecimal netPayable = service.applyDiscounts(item);
         assertEquals((new BigDecimal(965.00)).setScale(2), netPayable);
     }
 
@@ -129,9 +134,10 @@ public class DiscountServiceTest {
     @Test
     public void testApplyDiscountsEmployeeWithGroceries() {
         user.setUserType(UserType.EMPLOYEE);
-        service.setNet(new BigDecimal(1450.00));
 
-        BigDecimal netPayable = service.applyDiscounts();
+        item.setNet(new BigDecimal(1450.00));
+        item.setUser(user);
+        BigDecimal netPayable = service.applyDiscounts(item);
         assertEquals((new BigDecimal(1380.00)).setScale(2), netPayable);
     }
 
@@ -144,10 +150,11 @@ public class DiscountServiceTest {
     @Test
     public void testApplyDiscountsAffiliate() {
         user.setUserType(UserType.AFFILIATE);
-        service.setCategory(CategoryType.CLOTHING);
-        service.setNet(new BigDecimal(1450.00));
 
-        BigDecimal netPayable = service.applyDiscounts();
+        item.setCategory(CategoryType.CLOTHING);
+        item.setNet(new BigDecimal(1450.00));
+        item.setUser(user);
+        BigDecimal netPayable = service.applyDiscounts(item);
         assertEquals((new BigDecimal(1240.00)).setScale(2), netPayable);
     }
 
@@ -158,9 +165,10 @@ public class DiscountServiceTest {
     @Test
     public void testApplyDiscountsAffiliateWithGroceries() {
         user.setUserType(UserType.AFFILIATE);
-        service.setNet(new BigDecimal(1450.00));
 
-        BigDecimal netPayable = service.applyDiscounts();
+        item.setNet(new BigDecimal(1450.00));
+        item.setUser(user);
+        BigDecimal netPayable = service.applyDiscounts(item);
         assertEquals((new BigDecimal(1380.00)).setScale(2), netPayable);
     }
 
@@ -172,11 +180,12 @@ public class DiscountServiceTest {
     @Test
     public void testApplyDiscountsCustomer() {
         user.setUserType(UserType.CUSTOMER);
-        service.setUser(user);
-        service.setCategory(CategoryType.CLOTHING);
-        service.setNet(new BigDecimal(1450.00));
 
-        BigDecimal netPayable = service.applyDiscounts();
+
+        item.setNet(new BigDecimal(1450.00));
+        item.setCategory(CategoryType.CLOTHING);
+        item.setUser(user);
+        BigDecimal netPayable = service.applyDiscounts(item);
         assertEquals((new BigDecimal(1312.50)).setScale(2), netPayable);
     }
 
@@ -187,9 +196,10 @@ public class DiscountServiceTest {
     @Test
     public void testApplyDiscountsCustomerWithGroceries() {
         user.setUserType(UserType.CUSTOMER);
-        service.setNet(new BigDecimal(1450.00));
 
-        BigDecimal netPayable = service.applyDiscounts();
+        item.setNet(new BigDecimal(1450.00));
+        item.setUser(user);
+        BigDecimal netPayable = service.applyDiscounts(item);
         assertEquals((new BigDecimal(1380.00)).setScale(2), netPayable);
     }
 
@@ -200,10 +210,12 @@ public class DiscountServiceTest {
     public void testApplyDiscountsNewCustomer() {
         user.setJoiningDate(DateUtils.addYears(new Date(), -1));
         user.setUserType(UserType.CUSTOMER);
-        service.setCategory(CategoryType.CLOTHING);
-        service.setNet(new BigDecimal(1450.00));
 
-        BigDecimal netPayable = service.applyDiscounts();
+
+        item.setNet(new BigDecimal(1450.00));
+        item.setCategory(CategoryType.CLOTHING);
+        item.setUser(user);
+        BigDecimal netPayable = service.applyDiscounts(item);
         assertEquals((new BigDecimal(1380.00)).setScale(2), netPayable);
     }
 

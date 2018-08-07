@@ -28,7 +28,7 @@ I have followed below approaches for developing this code.High level class diagr
 - Overall the requirements are centered on discount so i have put all rules in separate businesslogic class. 
 - Inheritence or multiple interfaces are not used to avoid implicit complexity. 
 - Each implementation function has corresonding interface to reduce coupling.  
-- Same naming convention is used in each layer with differnt post-fix - BL for businesslogic, DA for data access, BE for busienss entity. 
+- Same naming convention is used in each layer with differnt postfix - BL for businesslogic, DA for data access, BE for busienss entity. 
 - The core logic is added in DiscountBL class. Any changes or new rules can be added here or new class can be introduced.   
 
 

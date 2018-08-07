@@ -3,6 +3,7 @@ package com.retail.service;
 import com.retail.businesslogic.DiscountBL;
 import com.retail.commontypes.CategoryType;
 import com.retail.model.DiscountBE;
+import com.retail.model.ItemBE;
 import com.retail.model.UserBE;
 
 import java.math.BigDecimal;
@@ -13,38 +14,20 @@ import java.util.Set;
 /**
  * Discount Service to be callable by external programs.
  * It can act as single point of contact rendering all applciable discount services.
- *
- *
+ * Item parameters is used for passing the data that need discount
+ * Discount parameters refer to rules to apply the discount from user type to discount amount.
  *
  */
 public class DiscountService implements iDiscountService {
 
+    private ItemBE item;
 
-    private UserBE user;
-
-    public BigDecimal getNet() {
-        return net;
-    }
-
-    public void setNet(BigDecimal net) {
-        this.net = net;
-    }
-
-    // the bill's net before discounts are applied
-    private BigDecimal net;
 
     // the bill's net after the discounts are applied
     private BigDecimal netPayable;
 
-    public CategoryType getCategory() {
-        return category;
-    }
 
-    public void setCategory(CategoryType category) {
-        this.category = category;
-    }
 
-    private CategoryType category;
 
     // discounts that will always be applied
     private List<DiscountBE> alwaysApplicableDiscounts;
@@ -70,10 +53,8 @@ public class DiscountService implements iDiscountService {
         if(user == null) {
             throw new IllegalArgumentException("user is require");
         }
+        item = new ItemBE(user,net,category);
 
-        this.user = user;
-        this.net = net;
-        this.category = category;
     }
 
     /**
@@ -82,31 +63,30 @@ public class DiscountService implements iDiscountService {
      * @return the net after the discounts are applied
      */
     @Override
-    public BigDecimal applyDiscounts() {
+    public BigDecimal applyDiscounts(ItemBE item) {
 
-        if(this.net == null) {
+        if(item.getNet() == null) {
             throw new IllegalArgumentException("net is required");
         }
 
         // start of with netPayable equals to net
-        netPayable = net;
+        netPayable = item.getNet();
 
         BigDecimal discountAmount = null;
 
 
-        DiscountBL discountBL = new DiscountBL(user, user.getUserType(),null,new BigDecimal(100), new BigDecimal(5),24);
-        discountBL.setUserType(user.getUserType());
+        DiscountBL discountBL = new DiscountBL(item.getUser(), new BigDecimal(100), new BigDecimal(5),24);
+
         // apply the mutually exclusive discounts first, they are applied in the order they
         // are inserted into the ArrayList. We could extend this approach to explicitly set the order
         // in the discount based on an instance variable
         if((mutuallyExclusiveDiscounts != null) && !mutuallyExclusiveDiscounts.isEmpty()) {
 
             for(DiscountBE discount: mutuallyExclusiveDiscounts) {
-                discount.setNetPayable(this.net);
-                discount.setUser(this.user);
+
                 discountBL.setDiscount(discount.getAmount());
-                discount.setCategory(this.category);
-                discountAmount = discountBL.calculate(discount);
+
+                discountAmount = discountBL.calculate(discount,item);
 
                 if(discountAmount != null) {
                     // one discount was applied now exit
@@ -124,11 +104,11 @@ public class DiscountService implements iDiscountService {
         if((alwaysApplicableDiscounts != null) && !alwaysApplicableDiscounts.isEmpty()) {
 
             for(DiscountBE discount: alwaysApplicableDiscounts) {
-                discount.setNetPayable(netPayable);
-                discount.setUser(this.user);
+
+                item.setNet(netPayable);
                 discountBL.setDiscount(discount.getAmount());
 
-                discountAmount = discountBL.calculate(discount);
+                discountAmount = discountBL.calculate(discount,item);
 
                 if(discountAmount != null) {
                     // apply it
@@ -168,11 +148,5 @@ public class DiscountService implements iDiscountService {
         this.mutuallyExclusiveDiscounts = mutuallyExclusive;
     }
 
-    public UserBE getUser() {
-        return user;
-    }
 
-    public void setUser(UserBE user) {
-        this.user = user;
-    }
 }

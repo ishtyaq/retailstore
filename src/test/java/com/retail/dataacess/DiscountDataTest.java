@@ -70,8 +70,8 @@ public class DiscountDataTest {
 
         assertEquals(UserType.EMPLOYEE, discount.getUserType());
 
-        //Set<CategoryType> exclude = discount.getExclude();
-        //validateExclude(exclude, CategoryType.GROCERIES);
+        Set<CategoryType> exclude = discount.getExclude();
+        validateExclude(exclude, CategoryType.GROCERIES);
 
         // affiliate discount, UserTypeDiscount
         discount =   discounts.get(1);
@@ -80,8 +80,8 @@ public class DiscountDataTest {
 
         assertEquals(UserType.AFFILIATE, discount.getUserType());
 
-     //   exclude = discount.getExclude();
-     //   validateExclude(exclude, CategoryType.GROCERIES);
+        exclude = discount.getExclude();
+        validateExclude(exclude, CategoryType.GROCERIES);
 
 
         // user period, CustomerPeriodDiscount
@@ -91,8 +91,8 @@ public class DiscountDataTest {
 
         assertEquals(new Integer(24), periodDiscount.getMonths());
 
-    //    exclude = periodDiscount.getExclude();
-    //    validateExclude(exclude, CategoryType.GROCERIES);
+        exclude = periodDiscount.getExclude();
+        validateExclude(exclude, CategoryType.GROCERIES);
     }
 
     private void validateDiscount(DiscountBE discount, BigDecimal amount,
@@ -102,11 +102,11 @@ public class DiscountDataTest {
 
         assertEquals(amount, discount.getAmount());
 
-    //    if(emptyExclude) {
-    //        assertNull(discount.getExclude());
-    //    } else {
-    //        assertNotNull(discount.getExclude());
-    //    }
+        if(emptyExclude) {
+            assertNull(discount.getExclude());
+        } else {
+            assertNotNull(discount.getExclude());
+        }
 
         assertEquals(type, discount.getDiscountType());
     }
