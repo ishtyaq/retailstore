@@ -32,11 +32,13 @@ I have followed below approaches for developing this code.High level class diagr
 - The core logic is added in DiscountBL class. Any changes or new rules can be added here or new class can be introduced.   
 
 
-![Alt text](https://github.com/ishtyaq/retail-store/blob/master/img/class_diagram.png "Class Diagram")
+![Alt text](https://github.com/ishtyaq/retailstore/blob/master/img/class_design.png "Class Diagram")
 
 # Test Coverage
 
 I’ve used the [Cobertura](https://github.com/cobertura/cobertura) maven plugin to ensure the unit tests provide full coverage. The current coverage is 96% as shown in the screenshot below.
+
+![Alt text](https://github.com/ishtyaq/retailstore/blob/master/img/code_coverage.png "Class Diagram")
 
 To run the test coverage:
 
